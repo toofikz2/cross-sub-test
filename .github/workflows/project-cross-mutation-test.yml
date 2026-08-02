@@ -1,0 +1,33 @@
+name: project-cross-mutation-test
+on: workflow_dispatch
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test cross-project item mutation
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== Step 1: List viewer projects ==="
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST https://api.github.com/graphql \
+            -d '{"query": "query { viewer { login projectsV2(first: 5) { nodes { id title number } } } }"}' | python3 -m json.tool
+
+          echo ""
+          echo "=== Step 2: Add issue to project ==="
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST https://api.github.com/graphql \
+            -d '{"query": "mutation { addProjectV2ItemById(input: {projectId: \"PVT_kwHOEBWiBc4Betc6\", contentId: \"I_kwDOTM5UB88AAAABLGYWwg\"}) { item { id } } }"}' | python3 -m json.tool
+
+          echo ""
+          echo "=== Step 3: Get project fields ==="
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST https://api.github.com/graphql \
+            -d '{"query": "query { node(id: \"PVT_kwHOEBWiBc4Betc6\") { ... on ProjectV2 { fields(first: 10) { nodes { ... on ProjectV2Field { id name } ... on ProjectV2SingleSelectField { id name options { id name } } } } items(first: 5) { nodes { id content { ... on Issue { title number } } } } } } }"}' | python3 -m json.tool
