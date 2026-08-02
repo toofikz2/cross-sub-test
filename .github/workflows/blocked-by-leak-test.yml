@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: Query blockedBy field
         run: |
-          echo "Testing blockedBy field"
-          RESULT=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -X POST https://api.github.com/graphql -d '{"query": "query { node(id: \\"I_kwDOTM5UB88AAAABLGYWwg\\") { ... on Issue { title blockedBy(first: 5) { nodes { title number repository { nameWithOwner isPrivate } } } } } }"}')
-          echo "$RESULT"
+          cat > /tmp/query.json << 'QUERYEOF'
+          {"query": "query { node(id: \"I_kwDOTM5UB88AAAABLGYWwg\") { ... on Issue { title blockedBy(first: 5) { nodes { title number repository { nameWithOwner isPrivate } } } } } }"}
+          QUERYEOF
+          curl -sv -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -X POST https://api.github.com/graphql -d @/tmp/query.json 2>&1
