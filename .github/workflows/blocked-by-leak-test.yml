@@ -1,0 +1,19 @@
+name: blocked-by-leak-test
+on: workflow_dispatch
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query blockedBy field
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Testing blockedBy field for private issue title leak"
+          curl -s -H "Authorization: Bearer \$GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST https://api.github.com/graphql \
+            -d '{"query": "query { node(id: \\"I_kwDOTM5UB88AAAABLGYWwg\\") { ... on Issue { title blockedBy(first: 5) { nodes { title number repository { nameWithOwner isPrivate } } } } } }"}' | python3 -m json.tool
