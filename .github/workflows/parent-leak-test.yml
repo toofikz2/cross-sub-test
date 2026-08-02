@@ -1,0 +1,18 @@
+name: parent-leak-test
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query parent via GraphQL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Testing Issue.parent traversal with GITHUB_TOKEN"
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST https://api.github.com/graphql \
+            -d '{"query": "query { node(id: \"I_kwDOTM5UB88AAAABLGYWwg\") { ... on Issue { title number repository { nameWithOwner } parent { title number url repository { nameWithOwner isPrivate } } } } }"}' | tee result.json
+          echo ""
+          echo "=== Parsed Result ==="
+          python3 -m json.tool result.json || cat result.json
